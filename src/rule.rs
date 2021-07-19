@@ -10,12 +10,23 @@ pub type RuleRecord = HashMap<(Handle<Symbol>, usize), RuleTable>;
 pub type RuleTable = Vec<RuleBody>;
 
 
-pub type Prarms = Handle<[Handle<Symbol>]>;
-
 #[derive(Debug, Clone)]
 pub struct RuleBody {
     pub prarms: Prarms,
     pub bodys: Handle<[Fact]>,
+}
+
+
+pub type Prarms = Handle<[Pattern]>;
+
+
+#[derive(Debug, Clone)]
+pub enum Pattern {
+    Ignore,
+    Variable(Handle<Symbol>),
+    Constant(Value),
+    Tuple(Vec<Pattern>),
+    List(Vec<Pattern>, Option<Handle<Pattern>>),
 }
 
 
