@@ -149,7 +149,7 @@ fn query_fact(
 ) -> Result<(), ()> {
     let prarms: Result<Vec<_>, ()> = this
         .args
-        .iter()
+        .par_iter()
         .map(|x| binding(x, prarms, scope))
         .collect();
     let prarms = prarms?;
