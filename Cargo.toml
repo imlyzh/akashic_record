@@ -17,3 +17,4 @@ path = "src/lib.rs"
 [dependencies]
 sexpr_ir = "^0.4.*"
 sexpr_process = "^0.1.*"
+rayon = "1.5.1"

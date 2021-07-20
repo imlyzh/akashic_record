@@ -1,9 +1,10 @@
 use std::{collections::HashMap, fmt::Display};
 
-use sexpr_ir::gast::{symbol::Symbol, Handle};
+use sexpr_ir::gast::symbol::Symbol;
 
+pub type Handle<T> = sexpr_ir::gast::Handle<T>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Nil,
     Bool(bool),
@@ -16,7 +17,6 @@ pub enum Value {
     Pair(Handle<Pair>),
     Tuple(Handle<Tuple>),
 }
-
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -36,7 +36,6 @@ impl Display for Value {
     }
 }
 
-
 impl Display for Pair {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut this = self;
@@ -52,14 +51,14 @@ impl Display for Pair {
                     this = t;
                     start = false;
                     continue;
-                },
+                }
                 Pair(v, Value::Nil) => {
                     if !start {
                         write!(f, " ")?;
                     }
                     v.fmt(f)?;
                     break;
-                },
+                }
                 Pair(v, t) => {
                     if !start {
                         write!(f, " ")?;
@@ -68,7 +67,7 @@ impl Display for Pair {
                     write!(f, " . ")?;
                     t.fmt(f)?;
                     break;
-                },
+                }
             }
         }
         write!(f, ")")
@@ -77,23 +76,21 @@ impl Display for Pair {
 
 impl Display for Tuple {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let r = self.0
-        .iter()
-        .map(Value::to_string)
-        .collect::<Vec<_>>();
+        let r = self.0.iter().map(Value::to_string).collect::<Vec<_>>();
         write!(f, "(vec {})", r.join(" "))
     }
 }
 
 impl Display for Dict {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let r = self.0.iter()
+        let r = self
+            .0
+            .iter()
             .map(|(k, v)| format!("'(\"{}\" . {})", k, v))
             .collect::<Vec<_>>();
         write!(f, "(dict {})", r.join(" "))
     }
 }
-
 
 macro_rules! impl_is_type {
     ($name:ident, $tp:ident) => {
@@ -102,7 +99,6 @@ macro_rules! impl_is_type {
         }
     };
 }
-
 
 impl Value {
     pub fn is_nil(&self) -> bool {
@@ -119,16 +115,14 @@ impl Value {
     impl_is_type!(is_dict, Tuple);
 }
 
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Pair(pub Value, pub Value);
 
 #[derive(Debug, Clone)]
 pub struct Dict(pub HashMap<Handle<String>, Value>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Tuple(pub Vec<Value>);
-
 
 impl From<&[Value]> for Value {
     fn from(i: &[Value]) -> Self {

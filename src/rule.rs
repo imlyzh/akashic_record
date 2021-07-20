@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use sexpr_ir::gast::{Handle, symbol::Symbol};
+use sexpr_ir::gast::{symbol::Symbol, Handle};
 
 use crate::value::Value;
 
+#[derive(Debug, Clone)]
+pub struct RuleRecord(pub HashMap<(Handle<Symbol>, usize), RuleTable>);
 
-pub type RuleRecord = HashMap<(Handle<Symbol>, usize), RuleTable>;
-
-pub type RuleTable = Vec<RuleBody>;
-
+#[derive(Debug, Clone)]
+pub struct RuleTable(pub Vec<RuleBody>);
 
 #[derive(Debug, Clone)]
 pub struct RuleBody {
@@ -16,9 +16,7 @@ pub struct RuleBody {
     pub bodys: Handle<[Fact]>,
 }
 
-
 pub type Prarms = Handle<[Pattern]>;
-
 
 #[derive(Debug, Clone)]
 pub enum Pattern {
@@ -29,13 +27,11 @@ pub enum Pattern {
     List(Vec<Pattern>, Option<Handle<Pattern>>),
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Fact {
-    pub call_name: Handle<Symbol>,
+    pub name: Handle<Symbol>,
     pub args: Vec<Expr>,
 }
-
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -45,4 +41,7 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone)]
-pub struct Call(pub Vec<Expr>);
+pub struct Call {
+    pub call_name: Handle<Symbol>,
+    pub args: Vec<Expr>,
+}

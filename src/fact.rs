@@ -1,14 +1,14 @@
-
 use std::collections::HashMap;
 
-use sexpr_ir::gast::{Handle, symbol::Symbol};
+use sexpr_ir::gast::{symbol::Symbol, Handle};
 
 use crate::value::Value;
 
+#[derive(Debug, Clone)]
+pub struct FactRecord(pub HashMap<(Handle<Symbol>, usize), ValueTable>);
 
+#[derive(Debug, Clone)]
+pub struct ValueTable(pub Vec<ValueLine>);
 
-pub type FactRecord = HashMap<(Handle<Symbol>, usize), ValueTable>;
-
-pub type ValueTable = Vec<ValueLine>;
-
-pub type ValueLine = Handle<[Value]>;
+#[derive(Debug, Clone)]
+pub struct ValueLine(pub Handle<[Value]>);

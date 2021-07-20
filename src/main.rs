@@ -1,8 +1,9 @@
+mod environment;
+mod fact;
+mod query;
+mod rule;
 mod scope;
 mod value;
-mod fact;
-mod rule;
-
 
 fn main() {
     println!("Hello, world!");
