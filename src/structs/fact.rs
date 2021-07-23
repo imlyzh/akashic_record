@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use sexpr_ir::gast::{symbol::Symbol, Handle};
 
-use crate::value::Value;
+use super::value::Value;
 
 #[derive(Debug, Clone)]
 pub struct FactRecord(pub HashMap<(Handle<Symbol>, usize), ValueTable>);

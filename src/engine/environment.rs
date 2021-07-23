@@ -1,6 +1,6 @@
 use std::sync::RwLock;
 
-use crate::{fact::FactRecord, rule::RuleRecord, scope::Scope, value::Handle};
+use crate::structs::{fact::FactRecord, rule::RuleRecord, scope::Scope, value::Handle};
 
 #[derive(Debug)]
 pub struct Database {

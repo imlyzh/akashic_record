@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::RwLock};
 
 use sexpr_ir::gast::{symbol::Symbol, Handle};
 
-use crate::value::Value;
+use super::value::Value;
 
 #[derive(Debug, Clone, Default)]
 pub struct SimpleScope(pub Handle<RwLock<HashMap<Handle<Symbol>, Value>>>);

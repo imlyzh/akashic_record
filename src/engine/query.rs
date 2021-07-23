@@ -1,24 +1,16 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::RwLock};
 
-use crate::{
-    environment::{Database, Env},
+use super::environment::Database;
+
+use crate::structs::{
     fact::{ValueLine, ValueTable},
-    rule::{Expr, Fact, Pattern, RuleBody, RuleTable},
+    rule::{Expr, FactQuery, Pattern, RuleBody, RuleTable},
     scope::{Scope, SimpleScope},
     value::{Handle, Value},
 };
 
 use rayon::prelude::*;
 use sexpr_ir::gast::symbol::Symbol;
-
-fn query_value_line(this: &ValueLine, env: &Handle<Scope>, prarms: &[Expr]) -> Result<(), ()> {
-    // if err return err
-    this.0
-        .par_iter()
-        .zip(prarms.par_iter())
-        .try_for_each(|(value, pattern)| unify(pattern, value, env))?;
-    Ok(())
-}
 
 fn unify(pattern: &Expr, value: &Value, env: &Handle<Scope>) -> Result<(), ()> {
     match pattern {
@@ -45,11 +37,73 @@ fn unify(pattern: &Expr, value: &Value, env: &Handle<Scope>) -> Result<(), ()> {
     }
 }
 
+fn matching(
+    pattern: &Pattern,
+    value: &Expr,
+    record: &RwLock<HashMap<Handle<Symbol>, Expr>>,
+) -> Result<(), ()> {
+    match pattern {
+        Pattern::Ignore => Ok(()),
+        Pattern::Variable(k) => {
+            if let Some(c) = record.read().unwrap().get(k) {
+                if c != value {
+                    return Err(());
+                }
+            } else {
+                record.write().unwrap().insert(k.clone(), value.clone());
+            }
+            Ok(())
+        }
+        Pattern::Constant(c) => {
+            if let Expr::Value(value) = value {
+                if c == value {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            } else {
+                Err(())
+            }
+        }
+        Pattern::Tuple(_) => todo!(),
+        Pattern::List(_, _) => todo!(),
+    }
+}
+
 fn swap_result<T, E>(i: Result<T, E>) -> Result<E, T> {
     match i {
         Ok(x) => Err(x),
         Err(x) => Ok(x),
     }
+}
+
+fn query_value_line(this: &ValueLine, env: &Handle<Scope>, prarms: &[Expr]) -> Result<(), ()> {
+    // if err return err
+    this.0
+        .par_iter()
+        .zip(prarms.par_iter())
+        .try_for_each(|(value, pattern)| unify(pattern, value, env))?;
+    Ok(())
+}
+
+fn query_rule_body(
+    this: &RuleBody,
+    env: &Handle<Database>,
+    scope: &Handle<Scope>,
+    prarms: &[Expr],
+) -> Result<Handle<Scope>, ()> {
+    let new_scope = scope.new_level(SimpleScope::new());
+
+    let capture = RwLock::new(HashMap::new());
+    this.prarms
+        .par_iter()
+        .zip(prarms.par_iter())
+        .try_for_each(|(pattern, value)| matching(pattern, value, &capture))?;
+
+    this.bodys
+        .par_iter()
+        .try_for_each(|x| query_fact(x, env, &new_scope, &capture))?;
+    Ok(new_scope)
 }
 
 fn query_value_table(
@@ -70,55 +124,6 @@ fn query_value_table(
         // traceback
         Err(())
     }
-}
-
-fn matching(
-    pattern: &Pattern,
-    value: &Expr,
-    scope: &Handle<Scope>,
-) -> Result<Vec<(Handle<Symbol>, Expr)>, ()> {
-    match pattern {
-        Pattern::Ignore => Ok(vec![]),
-        Pattern::Variable(k) => Ok(vec![(k.clone(), value.clone())]),
-        Pattern::Constant(c) => {
-            if let Expr::Value(value) = value {
-                if c == value {
-                    Ok(vec![])
-                } else {
-                    Err(())
-                }
-            } else {
-                Err(())
-            }
-        }
-        Pattern::Tuple(_) => todo!(),
-        Pattern::List(_, _) => todo!(),
-    }
-}
-
-fn query_rule_body(
-    this: &RuleBody,
-    env: &Handle<Database>,
-    scope: &Handle<Scope>,
-    prarms: &[Expr],
-) -> Result<Handle<Scope>, ()> {
-    let new_scope = scope.new_level(SimpleScope::new());
-
-    let r: Result<Vec<_>, _> = this
-        .prarms
-        .par_iter()
-        .zip(prarms.par_iter())
-        .map(|(pattern, value)| matching(pattern, value, &new_scope))
-        .collect();
-
-    let r = r?;
-
-    let capture: HashMap<Handle<Symbol>, Expr> = r.into_par_iter().flatten().collect();
-
-    this.bodys
-        .par_iter()
-        .try_for_each(|x| query_fact(x, env, &new_scope, &capture))?;
-    Ok(new_scope)
 }
 
 fn query_rule_table(
@@ -142,16 +147,12 @@ fn query_rule_table(
 }
 
 fn query_fact(
-    this: &Fact,
+    this: &FactQuery,
     env: &Handle<Database>,
     scope: &Handle<Scope>,
-    prarms: &HashMap<Handle<Symbol>, Expr>,
+    prarms: &RwLock<HashMap<Handle<Symbol>, Expr>>,
 ) -> Result<(), ()> {
-    let prarms: Result<Vec<_>, ()> = this
-        .args
-        .par_iter()
-        .map(|x| binding(x, prarms, scope))
-        .collect();
+    let prarms: Result<Vec<_>, ()> = this.args.par_iter().map(|x| binding(x, prarms)).collect();
     let prarms = prarms?;
 
     let k = (this.name.clone(), prarms.len());
@@ -206,17 +207,17 @@ fn query_fact(
     Err(())
 }
 
-fn binding(
-    x: &Expr,
-    prarms: &HashMap<Handle<Symbol>, Expr>,
-    scope: &Handle<Scope>,
-) -> Result<Expr, ()> {
+fn binding(x: &Expr, prarms: &RwLock<HashMap<Handle<Symbol>, Expr>>) -> Result<Expr, ()> {
     match x {
         Expr::Variable(k) => {
-            if let Some(x) = prarms.get(k) {
+            if let Some(x) = prarms.read().unwrap().get(k) {
                 Ok(x.clone())
             } else {
-                prarms.get(k).map_or_else(|| Err(()), |x| Ok(x.clone()))
+                prarms
+                    .write()
+                    .unwrap()
+                    .get(k)
+                    .map_or_else(|| Err(()), |x| Ok(x.clone()))
             }
         }
         _ => Ok(x.clone()),
