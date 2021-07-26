@@ -23,14 +23,14 @@ pub enum Pattern {
     Ignore,
     Variable(Handle<Symbol>),
     Constant(Value),
-    Tuple(Vec<Pattern>),
-    List(Vec<Pattern>, Option<Handle<Pattern>>),
+    Tuple(Handle<[Pattern]>),
+    List(Handle<[Pattern]>, Option<Handle<Pattern>>),
 }
 
 #[derive(Debug, Clone)]
 pub struct FactQuery {
     pub name: Handle<Symbol>,
-    pub args: Vec<Expr>,
+    pub args: Handle<[Expr]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,5 +43,5 @@ pub enum Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Call {
     pub call_name: Handle<Symbol>,
-    pub args: Vec<Expr>,
+    pub args: Box<[Expr]>,
 }
