@@ -17,6 +17,6 @@ path = "src/lib.rs"
 [dependencies]
 lazy_static = "1.4.0"
 rayon = "1.5.1"
-sexpr_ir = "^0.4.*"
+sexpr_ir = "^0.4.4"
 sexpr_process = { git="https://github.com/imlyzh/sexpr_process.git" }
 

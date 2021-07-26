@@ -8,7 +8,7 @@ use sexpr_process::capture::{Capture, Catch};
 
 use crate::structs::{fact::{FactRecord, ValueLine, ValueTable}, rule::{Expr, FactQuery, Pattern, RuleBody, RuleRecord, RuleTable}, scope::Scope};
 
-use super::{parser::FromGast, utils::*};
+use super::{environment::Database, parser::FromGast, utils::*};
 
 use super::eval::eval_value;
 
@@ -77,5 +77,36 @@ impl Loader for RuleRecord {
             self.0.insert(key, RuleTable(vec![value]));
         }
         Some(())
+    }
+}
+
+
+impl Loader for Database {
+    fn load(&mut self, env: &Handle<Scope>, input: &GAst) -> Option<()> {
+        let r = self.facts.write().unwrap().load(env, input);
+        if r.is_some() {
+            return Some(());
+        }
+        let r = self.rules.write().unwrap().load(env, input);
+        if r.is_some() {
+            return Some(());
+        }
+        if let Ok(capture) = DEFINE_PATTERN.catch(input) {
+            let capture: HashMap<Handle<Symbol>, Capture> = capture.into_iter().collect();
+            let name = capture
+                .get(&Symbol::new("name")).unwrap()
+                .get_one().unwrap()
+                .get_const()?
+                .get_sym()?;
+            let expr = capture
+                .get(&Symbol::new("expr")).unwrap()
+                .get_one().unwrap();
+            let expr = Expr::from_gast(expr)?;
+            let value = eval_value(&expr, env)?;
+            env.set(&name, &value);
+            Some(())
+        } else {
+            None
+        }
     }
 }

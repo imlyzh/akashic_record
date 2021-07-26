@@ -4,10 +4,10 @@ use sexpr_ir::gast::{symbol::Symbol, Handle};
 
 use super::value::Value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct RuleRecord(pub HashMap<(Handle<Symbol>, usize), RuleTable>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct RuleTable(pub Vec<RuleBody>);
 
 #[derive(Debug, Clone)]

@@ -4,7 +4,7 @@ use sexpr_ir::gast::{symbol::Symbol, Handle};
 
 use super::value::Value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct FactRecord(pub HashMap<(Handle<Symbol>, usize), ValueTable>);
 
 #[derive(Debug, Clone)]
