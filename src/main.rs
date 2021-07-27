@@ -1,20 +1,17 @@
 mod engine;
 mod structs;
 
-
-use std::io::{Write, stdin, stdout};
-
+use std::io::{stdin, stdout, Write};
 
 use sexpr_ir::syntax::sexpr::one_unit_parse;
 use structs::{scope::Scope, value::Handle};
 
 use crate::engine::environment::Database;
-use crate::engine::load::Loader;
+use crate::engine::load::repl_eval;
 
-
-fn start_repl(env: &mut Database, scope: &Handle<Scope>) {
+fn start_repl(env: &Handle<Database>, scope: &Handle<Scope>) {
     loop {
-        print!(">> ");
+        print!(">>> ");
         stdout().flush().unwrap();
         let mut buf = String::new();
         stdin().read_line(&mut buf).unwrap();
@@ -24,23 +21,27 @@ fn start_repl(env: &mut Database, scope: &Handle<Scope>) {
         }
         let r = one_unit_parse(buf, "<akashic_record>");
         if let Err(e) = r {
-            println!("err: {}", e);
+            println!("syntax err: {}", e);
             continue;
         }
         let input = r.unwrap();
-        if let Some(()) = env.load(scope, &input) {
+
+        if let Some(rs) = repl_eval(env, scope, &input) {
+            if let Some(x) = rs {
+                for (k, v) in x.0.read().unwrap().iter() {
+                    println!("{}: {}", k.0, v);
+                }
+            }
             println!("ok.");
         } else {
             println!("err.");
         }
-        println!("env: {:?}", env);
-        println!("scope: {:?}", scope);
     }
 }
 
 fn main() {
     println!("Welcome to Akashic Record!");
-    let mut env = Database::default();
+    let env = Handle::new(Database::default());
     let scope = Handle::new(Scope::default());
-    start_repl(&mut env, &scope);
+    start_repl(&env, &scope);
 }

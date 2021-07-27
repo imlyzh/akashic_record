@@ -11,23 +11,21 @@ macro_rules! impl_pattern {
     };
 }
 
-
 impl_pattern!(DEFINE_PATTERN, "('define name expr)");
 
 impl_pattern!(FACT_PATTERN, "('fact name exprs ...)");
 
 impl_pattern!(RULE_PATTERN, "('rule prarms exprs ...)");
 
-impl_pattern!(QUERY_PATTERN, "('exists prarms 'forall exprs ...)");
-
+impl_pattern!(QUERY_PATTERN, "('query prarms exprs ...)");
 
 impl_pattern!(RULE_PARAMS_PATTERN, "(name args ...)");
 
+impl_pattern!(FACT_QUERY_PATTERN, "(name args ...)");
+
 impl_pattern!(FUNCTION_CALL_PATTERN, "(name args ...)");
 
-impl_pattern!(QUERY_VAR_PATTERN, "(prarms ...)");
-
-impl_pattern!(FACT_QUERY_PATTERN, "(name args ...)");
+impl_pattern!(QUERY_PARAMS_PATTERN, "(args ...)");
 
 impl_pattern!(SYMBOL_LITERIAL_PATTERN, "('quote sym)");
 

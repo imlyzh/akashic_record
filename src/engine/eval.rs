@@ -2,7 +2,7 @@ use sexpr_ir::gast::{symbol::Symbol, Handle};
 
 use crate::structs::{rule::Expr, scope::Scope, value::Value};
 
-fn eval_function(name: &Handle<Symbol>, args: &[Value]) -> Value {
+fn eval_function(_name: &Handle<Symbol>, _args: &[Value], _env: &Handle<Scope>) -> Value {
     todo!()
 }
 
@@ -13,7 +13,7 @@ pub fn eval_value(i: &Expr, env: &Handle<Scope>) -> Option<Value> {
         Expr::FunctionCall(c) => {
             let r: Option<Vec<Value>> = c.args.iter().map(|x| eval_value(x, env)).collect();
             let r = r?;
-            Some(eval_function(&c.call_name, &r))
+            Some(eval_function(&c.call_name, &r, env))
         }
     }
 }
